@@ -31,14 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-/.mvn/
-/mvnw
-/mvnw.cmd
-/gateway/.mvn/wrapper/
-/eureka/mvnw.cmd
-/eureka/mvnw
-/provider/mvnw
-/provider/mvnw.cmd
-/consumer/.mvn/wrapper/
-/consumer/mvnw
-/consumer/mvnw.cmd
