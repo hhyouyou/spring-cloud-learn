@@ -53,6 +53,17 @@ public class ConsumerApplication {
                     .collect(Collectors.joining());
         }
 
+        @GetMapping("/choose")
+        public String choose() {
+
+            RandomServiceInstanceChooser randomServiceInstanceChooser = new RandomServiceInstanceChooser(discoveryClient);
+
+            ServiceInstance serviceInstance = randomServiceInstanceChooser.choose(serviceName);
+
+            return restTemplate.getForObject("http://" + serviceInstance.getHost() + ":" + serviceInstance.getPort() + "/echo?name=hello", String.class);
+
+        }
+
 
         @GetMapping("/hello")
         public String hello() {
