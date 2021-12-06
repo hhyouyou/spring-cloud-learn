@@ -6,15 +6,24 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalancerRequestFactory;
+import org.springframework.cloud.client.loadbalancer.ServiceRequestWrapper;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpRequest;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @author dongjingxi
+ */
 @SpringBootApplication
 @EnableDiscoveryClient(autoRegister = false)
 public class ConsumerApplication {
@@ -24,10 +33,35 @@ public class ConsumerApplication {
     }
 
 
+//    @Bean
+//    @LoadBalanced
+//    public RestTemplate restTemplate() {
+//        return new RestTemplate();
+//    }
+
+
+    @Autowired
+    private LoadBalancerClient loadBalancer;
+
+
     @Bean
-    @LoadBalanced
     public RestTemplate restTemplate() {
-        return new RestTemplate();
+        RestTemplate restTemplate = new RestTemplate();
+
+        List<ClientHttpRequestInterceptor> list = new ArrayList<>(
+                restTemplate.getInterceptors());
+        list.add(((request, body, execution) -> {
+            final URI originalUri = request.getURI();
+            String serviceName = originalUri.getHost();
+
+            return loadBalancer.execute(serviceName, instance -> {
+                HttpRequest serviceRequest = new ServiceRequestWrapper(request, instance, this.loadBalancer);
+                return execution.execute(serviceRequest, body);
+            });
+
+        }));
+        restTemplate.setInterceptors(list);
+        return restTemplate;
     }
 
 
